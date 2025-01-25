@@ -1,0 +1,20 @@
+steps:
+  # Build the container image using Kaniko with caching
+  - name: "gcr.io/kaniko-project/executor:latest"
+    args:
+      - --destination=$REPO_URL:$TAG_NAME
+      - --cache=true
+      - --cache-ttl=168h
+      - --context=.
+      - --dockerfile=dev/build/Dockerfile
+      - --use-new-run
+    id: "build"
+    env:
+      - TAG_NAME=$TAG_NAME
+      - REPO_URL=$_REPO_URL
+
+# Set timeout for build
+timeout: "1200s"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
