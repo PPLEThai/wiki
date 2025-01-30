@@ -173,7 +173,9 @@ export default {
         title: '',
         css: '',
         js: ''
-      }
+      },
+      tagsFromSetting: [],
+      tagsFromExistingContent: []
     }
   },
   computed: {
@@ -248,6 +250,7 @@ export default {
       this.currentEditor = `editor${_.startCase(this.initEditor || 'markdown')}`
     }
 
+    this.seperateTags()
     window.onbeforeunload = () => {
       if (!this.exitConfirmed && this.initContentParsed !== this.$store.get('editor/content')) {
         return this.$t('editor:unsavedWarning')
@@ -264,6 +267,24 @@ export default {
     // this.currentEditor = `editorApi`
   },
   methods: {
+    seperateTags() {
+      const content = this.$store.get('editor/content')
+      const originalTag = this.$store.get('page/tags')
+      const regex = /(?:^|\s|>)([#@!$](?:[\w\u0E00-\u0E7F-]+(?:\/[\w\u0E00-\u0E7F-]+)*|[\w\u0E00-\u0E7F-]+(?:\.[^\s<>#@!]+)*))/g
+      const matches = [...content.matchAll(regex)].map(match => {
+        if (match[1].startsWith('#')) {
+          return match[1].substring(1)
+        }
+        return match[1]
+      })
+
+      // หา tags ที่อยู่ใน originalTag แต่ไม่อยู่ใน matches
+      this.tagsFromExistingContent = matches
+      console.log('Tags จากข้อความ: ', this.tagsFromExistingContent)
+      const tagsOnlyInOriginal = originalTag.filter(tag => !matches.includes(tag))
+      console.log('Tags ที่อยู่ใน originalTag แต่ไม่อยู่ในข้อความ: ', tagsOnlyInOriginal)
+      this.tagsFromSetting = tagsOnlyInOriginal
+    },
     openPropsModal(name) {
       this.dialogProps = true
     },
@@ -280,25 +301,28 @@ export default {
       this.showProgressDialog('saving')
       this.isSaving = true
 
-      const content = this.$store.get('editor/content');
-      const originalTag = this.$store.get('page/tags')
+      const content = this.$store.get('editor/content')
+      // const originalTag = this.$store.get('page/tags')
 
-      // RegEx ที่แก้ไขเพื่อดึงคำที่เริ่มต้นด้วย # (เหตุการณ์/tag), @ (คน), หรือ ! (สถานที่)
-      const regex = /(?:^|\s|>)([#@!][\w\u0E00-\u0E7F-]+(?:\.[^\s<>#@!]+)*)/g;
+      // RegEx ที่แก้ไขเพื่อดึงคำที่เริ่มต้นด้วย # (tag), @ (คน), ! (สถานที่), $ (เหตุการณ์)
+      const regex = /(?:^|\s|>)([#@!$](?:[\w\u0E00-\u0E7F-]+(?:\/[\w\u0E00-\u0E7F-]+)*|[\w\u0E00-\u0E7F-]+(?:\.[^\s<>#@!]+)*))/g
 
-      // ดึง matches และลบ #, @, ! ออก
+      // ดึง matches และลบ # ออก
       const matches = [...content.matchAll(regex)].map(match => {
         if (match[1].startsWith('#')) {
-          return match[1].substring(1);
+          return match[1].substring(1)
         }
-        return match[1];
-      });
-
+        return match[1]
+      })
+      // console.log('Tags จากของใหม่: ', originalTag)
+      // console.log('Tags จากของเดิมที่มีในเนื้อหา: ', this.tagsFromExistingContent)
+      // console.log('Tags จากเนื้อหาปัจจุบัน: ', matches)
       // รวม originalTag และ matches แล้วลบข้อมูลซ้ำ
-      const combinedTags = Array.from(new Set([...originalTag, ...matches]));
+      // const combinedTags = Array.from(new Set([...this.tagsFromSetting, ...matches]))
 
-      // บันทึกผลรวมกลับไปใน Store (ถ้าจำเป็น)
-      this.$store.set('page/tags', combinedTags);
+      // บันทึกผลรวมกลับไปใน Store
+      this.$store.set('page/tags', matches)
+      // console.log(matches)
 
       const saveTimeoutHandle = setTimeout(() => {
         throw new Error('Save operation timed out.')
@@ -379,13 +403,14 @@ export default {
           if (_.get(resp, 'responseResult.succeeded')) {
             this.checkoutDateActive = _.get(resp, 'page.updatedAt', this.checkoutDateActive)
             this.isConflict = false
+            this.$store.set('editor/id', _.get(resp, 'page.id'))
+            this.$store.set('editor/mode', 'update')
+            await this.findNewTags()
             this.$store.commit('showNotification', {
               message: this.$t('editor:save.createSuccess'),
               style: 'success',
               icon: 'check'
             })
-            this.$store.set('editor/id', _.get(resp, 'page.id'))
-            this.$store.set('editor/mode', 'update')
             this.exitConfirmed = true
             window.location.assign(`/${this.$store.get('page/locale')}/${this.$store.get('page/path')}`)
           } else {
@@ -488,6 +513,7 @@ export default {
           if (_.get(resp, 'responseResult.succeeded')) {
             this.checkoutDateActive = _.get(resp, 'page.updatedAt', this.checkoutDateActive)
             this.isConflict = false
+            await this.findNewTags()
             this.$store.commit('showNotification', {
               message: this.$t('editor:save.updateSuccess'),
               style: 'success',
@@ -577,7 +603,188 @@ export default {
         document.head.appendChild(styl)
         styl.appendChild(document.createTextNode(css))
       }
-    }, 1000)
+    }, 1000),
+
+    // ===============================
+    // PPLE Customize
+    // ===============================
+    async findNewTags() {
+      // ดึงเนื้อหาจาก editor
+      const tags = this.$store.get('page/tags')
+
+      // ตรวจสอบหาแท็กใหม่ที่ขึ้นต้นด้วย @
+      console.log(tags)
+      await this.extractNewTags(tags)
+    },
+    async extractNewTags(tags) {
+      for (const tag of tags) {
+        // ตรวจสอบเฉพาะแท็กที่ขึ้นต้นด้วย @, $ หรือ !
+        if (tag.startsWith('@') || tag.startsWith('$') || tag.startsWith('!')) {
+          let tagName = ''
+          let tagPath = ''
+
+          if (tag.startsWith('@')) {
+            tagName = tag.substring(1)
+            tagPath = `คน/${tagName}`
+          } else if (tag.startsWith('$')) {
+            tagName = tag.substring(1)
+            tagPath = `เหตุการณ์/${tagName}`
+          } else if (tag.startsWith('!')) {
+            tagName = tag.substring(1)
+
+            // แยกส่วนต่าง ๆ ของที่อยู่
+            const parts = tagName.split('/')
+
+            if (parts.length > 1) {
+              // กรณีมีหลายระดับ เช่น แขวง/เขต/จังหวัด
+              tagPath = 'สถานที่'
+              // สลับลำดับจากท้ายไปหน้า
+              for (let i = parts.length - 1; i >= 0; i--) {
+                tagPath += '/' + parts[i].trim()
+              }
+            } else {
+              // กรณีระดับเดียว
+              tagPath = `สถานที่/${tagName}`
+            }
+          }
+
+          // ค้นหาว่ามีหน้าที่เกี่ยวข้องกับ tag นี้หรือยัง
+          const response = await this.$apollo.query({
+            query: gql`
+              query ($path: String!, $locale: String!) {
+                pages {
+                  singleByPath(path: $path, locale: $locale) {
+                    id
+                  }
+                }
+              }
+            `,
+            variables: {
+              path: tagPath,
+              locale: this.$store.get('page/locale')
+            }
+          })
+
+          // ถ้าไม่พบหน้าที่เกี่ยวข้อง
+          console.log(response.data.pages.singleByPath)
+          if (!response.data.pages.singleByPath) {
+            console.log(`ยังไม่มีหน้าสำหรับ ${tag}: false`)
+            const type = tag.startsWith('@') ? 'person' : tag.startsWith('$') ? 'event' : 'place'
+            await this.createPageForTag(tagName, type)
+          }
+        }
+      }
+    },
+    async createPageForTag(tagName, type) {
+      try {
+        let path = ''
+        let prefix = ''
+        let title = ''
+
+        switch (type) {
+          case 'person':
+            path = `คน/${tagName}`
+            prefix = '@'
+            title = tagName
+            break
+          case 'event':
+            path = `เหตุการณ์/${tagName}`
+            prefix = '$'
+            title = tagName
+            break
+          case 'place':
+            // กรณีสถานที่ ต้องสลับลำดับถ้ามีหลายระดับ
+            const parts = tagName.split('/')
+            if (parts.length > 1) {
+              path = 'สถานที่'
+              for (let i = parts.length - 1; i >= 0; i--) {
+                path += '/' + parts[i].trim()
+              }
+              title = parts[0]
+            } else {
+              path = `สถานที่/${tagName}`
+              title = tagName
+            }
+            prefix = '!'
+            break
+        }
+
+        const response = await this.$apollo.mutate({
+          mutation: gql`
+            mutation (
+              $content: String!
+              $description: String!
+              $editor: String!
+              $isPrivate: Boolean!
+              $isPublished: Boolean!
+              $locale: String!
+              $path: String!
+              $publishEndDate: Date
+              $publishStartDate: Date
+              $scriptCss: String
+              $scriptJs: String
+              $tags: [String]!
+              $title: String!
+            ) {
+              pages {
+                create(
+                  content: $content
+                  description: $description
+                  editor: $editor
+                  isPrivate: $isPrivate
+                  isPublished: $isPublished
+                  locale: $locale
+                  path: $path
+                  publishEndDate: $publishEndDate
+                  publishStartDate: $publishStartDate
+                  scriptCss: $scriptCss
+                  scriptJs: $scriptJs
+                  tags: $tags
+                  title: $title
+                ) {
+                  responseResult {
+                    succeeded
+                    errorCode
+                    slug
+                    message
+                  }
+                  page {
+                    id
+                    updatedAt
+                  }
+                }
+              }
+            }
+          `,
+          variables: {
+            content: `<h1>${title}</h1>`,
+            description: '',
+            editor: 'ckeditor',
+            isPrivate: false,
+            isPublished: true,
+            locale: 'th',
+            path: path,
+            publishEndDate: '',
+            publishStartDate: '',
+            scriptCss: '',
+            scriptJs: '',
+            tags: [`${prefix}${tagName}`],
+            title: title
+          }
+        })
+
+        if (response.data.pages.create.responseResult.succeeded) {
+          console.log(`Page created for tag: ${prefix}${tagName}`)
+        } else {
+          console.error(`Failed to create page for ${tagName}`)
+        }
+      } catch (err) {
+        console.error('Error creating page:', err)
+      }
+    }
+    // ===============================
+    // End of PPLE Customize
+    // ===============================
   },
   apollo: {
     isConflict: {

@@ -5,15 +5,29 @@
       if (node.nodeType === Node.TEXT_NODE) {
         // Replace special tags in text content only
         const updatedText = node.textContent.replace(
-          /(?:^|\s)([#@!])([\w\u0E00-\u0E7F-]+(?:[-\.]\w+)*)/g,
+          /(?:^|\s)([#@!$])([\w\u0E00-\u0E7F-]+(?:\/[\w\u0E00-\u0E7F-]+)*)/g,
           (match, symbol, keyword) => {
             const trimmedMatch = match.trim(); // Remove leading space for correct replacement
             if (symbol === '#') {
-              return `&nbsp<a target="_blank" href="/t/${keyword}" class="tag tag-hashtag">${trimmedMatch}</a>`;
+              return `&nbsp<a href="/t/${keyword}" class="tag tag-hashtag">${trimmedMatch}</a>`;
             } else if (symbol === '@') {
-              return `&nbsp<a target="_blank" href="/คน/${keyword}" class="tag tag-mention">${keyword}</a>`;
+              // Replace dash with space for person names
+              const displayName = keyword.replace(/-/g, ' ');
+              return `&nbsp<a href="/คน/${keyword}" class="tag tag-mention">${displayName}</a>`;
             } else if (symbol === '!') {
-              return `&nbsp<a target="_blank" href="/สถานที่/${keyword}" class="tag tag-location">${keyword}</a>`;
+              // Split location parts
+              const parts = keyword.split('/');
+              // สร้าง path จากการเรียงลำดับจากมากไปน้อย
+              const locationPath = parts.length > 1
+                ? '/สถานที่/' + parts.reverse().join('/')
+                : '/สถานที่/' + parts[0];
+
+              // แสดงชื่อสถานที่ล่าสุด (ส่วนสุดท้าย)
+              const displayName = parts[parts.length - 1];
+
+              return `&nbsp<a href="${locationPath}" class="tag tag-location">${displayName}</a>`;
+            } else if (symbol === '$') {
+              return `&nbsp<a href="/เหตุการณ์/${keyword}" class="tag tag-event">${keyword}</a>`;
             }
             return trimmedMatch;
           }
