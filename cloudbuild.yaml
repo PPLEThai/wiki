@@ -14,7 +14,7 @@ steps:
       - _REPO_URL=$_REPO_URL
 
 # Set timeout for build
-timeout: "1200s"
+timeout: "2400s"
 
 options:
   logging: CLOUD_LOGGING_ONLY
