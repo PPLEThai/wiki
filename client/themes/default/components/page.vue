@@ -240,31 +240,31 @@
                   span(:class='$vuetify.theme.dark ? `teal--text text--lighten-5` : `teal--text text--darken-2`') {{tag.title.substring(2)}}
 
             //- ข้อมูลที่เกี่ยวข้อง
-            v-card.page-person-card.mb-5(v-if='isSpecialTags')
-              .pa-5
-                .overline.indigo--text.d-flex(:class='$vuetify.theme.dark ? `text--lighten-3` : ``')
-                  span(v-if="path.includes('/คน/')") ข้อมูลบุคคล
-                  span(v-else-if="path.includes('/กลุ่มหรือองค์กร/')") ข้อมูลกลุ่มหรือองค์กร
-                  span(v-else-if="path.includes('/เหตุการณ์/')") ข้อมูลเหตุการณ์
-                  span(v-else-if="path.includes('/สถานที่/')") ข้อมูลสถานที่
+            //- v-card.page-person-card.mb-5(v-if='isSpecialTags')
+            //-   .pa-5
+            //-     .overline.indigo--text.d-flex(:class='$vuetify.theme.dark ? `text--lighten-3` : ``')
+            //-       span(v-if="path.includes('/คน/')") ข้อมูลบุคคล
+            //-       span(v-else-if="path.includes('/กลุ่มหรือองค์กร/')") ข้อมูลกลุ่มหรือองค์กร
+            //-       span(v-else-if="path.includes('/เหตุการณ์/')") ข้อมูลเหตุการณ์
+            //-       span(v-else-if="path.includes('/สถานที่/')") ข้อมูลสถานที่
 
-                .mt-1
-                  .overline.pb-2 หน้าที่เกี่ยวข้อง
-                  v-list(dense, nav)
-                    template(v-if='relatedPages.length > 0')
-                      v-list-item(
-                        v-for='page in relatedPages'
-                        :key='page.id'
-                        :href='`/${page.locale}/${page.path}`'
-                        )
-                          v-list-item-icon.icon-list(style='margin-right: 6px')
-                            v-icon mdi-file-document-outline
-                          v-list-item-content
-                            v-list-item-title {{ page.title }}
-                    template(v-else)
-                      v-list-item
-                        v-list-item-content
-                          v-list-item-title.grey--text ไม่พบหน้าที่เกี่ยวข้อง
+                //- .mt-1
+                //-   .overline.pb-2 หน้าที่เกี่ยวข้อง
+                //-   v-list(dense, nav)
+                //-     template(v-if='relatedPages.length > 0')
+                //-       v-list-item(
+                //-         v-for='page in relatedPages'
+                //-         :key='page.id'
+                //-         :href='`/${page.locale}/${page.path}`'
+                //-         )
+                //-           v-list-item-icon.icon-list(style='margin-right: 6px')
+                //-             v-icon mdi-file-document-outline
+                //-           v-list-item-content
+                //-             v-list-item-title {{ page.title }}
+                //-     template(v-else)
+                //-       v-list-item
+                //-         v-list-item-content
+                //-           v-list-item-title.grey--text ไม่พบหน้าที่เกี่ยวข้อง
 
             //- ช่วงเวลาเหตุการณ์
             v-card.page-time-card.mb-5(v-if="isEventPage")
@@ -458,6 +458,19 @@
               .caption {{$t('common:page.unpublishedWarning')}}
             .contents(ref='container')
               slot(name='contents')
+            v-divider.mt-5(v-if='relatedPages.length > 0')
+            .related-pages-section.mt-5(v-if='relatedPages.length > 0')
+              .overline.pb-2 หน้าที่เกี่ยวข้อง
+              v-list(dense, nav)
+                v-list-item(
+                  v-for='page in relatedPages'
+                  :key='page.id'
+                  :href='`/${page.locale}/${page.path}`'
+                  )
+                  v-list-item-icon.icon-list(style='margin-right: 6px')
+                    v-icon mdi-file-document-outline
+                  v-list-item-content
+                    v-list-item-title {{ page.title }}
             .comments-container#discussion(v-if='commentsEnabled && commentsPerms.read && !printView')
               .comments-header
                 v-icon.mr-2(dark) mdi-comment-text-outline
