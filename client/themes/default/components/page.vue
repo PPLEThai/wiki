@@ -267,63 +267,63 @@
                 //-           v-list-item-title.grey--text ไม่พบหน้าที่เกี่ยวข้อง
 
             //- ช่วงเวลาเหตุการณ์
-            v-card.page-time-card.mb-5(v-if="isEventPage")
-              .pa-5
-                .overline.indigo--text.pb-2(:class='$vuetify.theme.dark ? `text--lighten-3` : ``') ช่วงเวลา
-                v-row
-                  v-col(cols="12")
-                    v-menu(
-                      ref="startDateMenu"
-                      v-model="startDateMenu"
-                      :close-on-content-click="false"
-                      transition="scale-transition"
-                      offset-y
-                      max-width="290px"
-                      min-width="290px"
-                    )
-                      template(v-slot:activator="{ on, attrs }")
-                        v-text-field(
-                          v-model="startDate"
-                          label="เริ่มต้น"
-                          prepend-icon="mdi-calendar"
-                          readonly
-                          v-bind="attrs"
-                          v-on="on"
-                          dense
-                          outlined
-                        )
-                      v-date-picker(
-                        v-model="startDate"
-                        no-title
-                        @input="startDateMenu = false"
-                      )
-                  v-col(cols="12")
-                    v-menu(
-                      ref="endDateMenu"
-                      v-model="endDateMenu"
-                      :close-on-content-click="false"
-                      transition="scale-transition"
-                      offset-y
-                      max-width="290px"
-                      min-width="290px"
-                    )
-                      template(v-slot:activator="{ on, attrs }")
-                        v-text-field(
-                          v-model="endDate"
-                          label="สิ้นสุด"
-                          prepend-icon="mdi-calendar"
-                          readonly
-                          v-bind="attrs"
-                          v-on="on"
-                          dense
-                          outlined
-                        )
-                      v-date-picker(
-                        v-model="endDate"
-                        no-title
-                        @input="endDateMenu = false"
-                      )
-                v-btn(color="primary", @click="saveDates") บันทึก
+            //- v-card.page-time-card.mb-5(v-if="isEventPage")
+            //-   .pa-5
+            //-     .overline.indigo--text.pb-2(:class='$vuetify.theme.dark ? `text--lighten-3` : ``') ช่วงเวลา
+            //-     v-row
+            //-       v-col(cols="12")
+            //-         v-menu(
+            //-           ref="startDateMenu"
+            //-           v-model="startDateMenu"
+            //-           :close-on-content-click="false"
+            //-           transition="scale-transition"
+            //-           offset-y
+            //-           max-width="290px"
+            //-           min-width="290px"
+            //-         )
+            //-           template(v-slot:activator="{ on, attrs }")
+            //-             v-text-field(
+            //-               v-model="startDate"
+            //-               label="เริ่มต้น"
+            //-               prepend-icon="mdi-calendar"
+            //-               readonly
+            //-               v-bind="attrs"
+            //-               v-on="on"
+            //-               dense
+            //-               outlined
+            //-             )
+            //-           v-date-picker(
+            //-             v-model="startDate"
+            //-             no-title
+            //-             @input="startDateMenu = false"
+            //-           )
+            //-       v-col(cols="12")
+            //-         v-menu(
+            //-           ref="endDateMenu"
+            //-           v-model="endDateMenu"
+            //-           :close-on-content-click="false"
+            //-           transition="scale-transition"
+            //-           offset-y
+            //-           max-width="290px"
+            //-           min-width="290px"
+            //-         )
+            //-           template(v-slot:activator="{ on, attrs }")
+            //-             v-text-field(
+            //-               v-model="endDate"
+            //-               label="สิ้นสุด"
+            //-               prepend-icon="mdi-calendar"
+            //-               readonly
+            //-               v-bind="attrs"
+            //-               v-on="on"
+            //-               dense
+            //-               outlined
+            //-             )
+            //-           v-date-picker(
+            //-             v-model="endDate"
+            //-             no-title
+            //-             @input="endDateMenu = false"
+            //-           )
+            //-     v-btn(color="primary", @click="saveDates") บันทึก
 
             v-card.page-shortcuts-card(flat)
               v-toolbar(:color='$vuetify.theme.dark ? `grey darken-4-d3` : `grey lighten-3`', flat, dense)
@@ -458,6 +458,14 @@
               .caption {{$t('common:page.unpublishedWarning')}}
             .contents(ref='container')
               slot(name='contents')
+            v-card.page-tour-card.mb-5(v-if='path.startsWith("สถานที่/")')
+              .pa-5
+                iframe(
+                  :src='getTourThaiUrl()'
+                  style='width: 100%; height: 500px; border: none;'
+                  allowfullscreen
+                )
+
             v-divider.mt-5(v-if='relatedPages.length > 0')
             .related-pages-section.mt-5(v-if='relatedPages.length > 0')
               .overline.pb-2 หน้าที่เกี่ยวข้อง
@@ -938,6 +946,34 @@ export default {
         // บันทึกวันที่หรือทำการอื่น ๆ ที่ต้องการ
         console.log('Dates are valid and saved:', this.startDate, this.endDate)
       }
+    },
+    getTourThaiUrl() {
+      // ตรวจสอบว่า path ขึ้นต้นด้วย สถานที่/ หรือไม่
+      if (!this.path.startsWith('สถานที่/')) {
+        return null
+      }
+
+      const parts = this.path.substring('สถานที่/'.length).split('/')
+      const params = new URLSearchParams()
+
+      // Province is always the first part
+      if (parts[0]) {
+        params.append('province', parts[0])
+      }
+
+      // District is second part if exists (remove เขต/อำเภอ)
+      if (parts[1]) {
+        const district = parts[1].replace(/^(เขต|อำเภอ)/, '').trim()
+        params.append('district', district)
+      }
+
+      // Subdistrict is third part if exists (remove แขวง/ตำบล)
+      if (parts[2]) {
+        const subdistrict = parts[2].replace(/^(แขวง|ตำบล)/, '').trim()
+        params.append('subdistrict', subdistrict)
+      }
+
+      return `https://tourthai.peoplesparty.or.th/km?${params.toString()}`
     }
   }
 }
