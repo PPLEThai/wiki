@@ -87,7 +87,7 @@ export default {
           fetchPolicy: 'cache-first'
         })
 
-        this.summary = result.data?.pages?.aiSummary
+        this.summary = result.data && result.data.pages && result.data.pages.aiSummary
       } catch (err) {
         console.warn('Failed to fetch AI summary:', err)
         this.summary = null

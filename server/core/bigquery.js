@@ -13,14 +13,14 @@ module.exports = {
   async init() {
     try {
       // Initialize BigQuery client
-      if (process.env.GOOGLE_CLOUD_PROJECT || WIKI.config.bigquery?.projectId) {
+      if (process.env.GOOGLE_CLOUD_PROJECT || (WIKI.config.bigquery && WIKI.config.bigquery.projectId)) {
         this.bigQuery = new BigQuery({
-          projectId: WIKI.config.bigquery?.projectId || process.env.GOOGLE_CLOUD_PROJECT,
-          keyFilename: WIKI.config.bigquery?.keyFilename || process.env.GOOGLE_APPLICATION_CREDENTIALS
+          projectId: (WIKI.config.bigquery && WIKI.config.bigquery.projectId) || process.env.GOOGLE_CLOUD_PROJECT,
+          keyFilename: (WIKI.config.bigquery && WIKI.config.bigquery.keyFilename) || process.env.GOOGLE_APPLICATION_CREDENTIALS
         })
 
-        const datasetId = WIKI.config.bigquery?.datasetId || 'wiki_data'
-        const tableId = WIKI.config.bigquery?.tableId || 'ai_summaries'
+        const datasetId = (WIKI.config.bigquery && WIKI.config.bigquery.datasetId) || 'wiki_data'
+        const tableId = (WIKI.config.bigquery && WIKI.config.bigquery.tableId) || 'ai_summaries'
 
         this.dataset = this.bigQuery.dataset(datasetId)
         this.table = this.dataset.table(tableId)

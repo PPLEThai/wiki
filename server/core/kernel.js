@@ -45,7 +45,7 @@ module.exports = {
       WIKI.bigquery = require('./bigquery')
 
       // Initialize BigQuery if configured
-      if (WIKI.config.bigquery?.enabled !== false) {
+      if (WIKI.config.bigquery && WIKI.config.bigquery.enabled !== false) {
         try {
           await WIKI.bigquery.init()
         } catch (err) {
