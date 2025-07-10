@@ -57,6 +57,11 @@ type PageQuery {
     query: String!
   ): [String]! @auth(requires: ["manage:system", "read:pages"])
 
+  aiSummary(
+    path: String!
+    locale: String!
+  ): PageAISummary @auth(requires: ["read:pages", "manage:system"])
+
   tree(
     path: String
     parent: Int
@@ -217,6 +222,12 @@ type PageTag {
   title: String
   createdAt: Date!
   updatedAt: Date!
+}
+
+type PageAISummary {
+  summary: String!
+  createdAt: Date!
+  locale: String!
 }
 
 type PageHistory {

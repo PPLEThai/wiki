@@ -456,6 +456,7 @@
               span {{$t('common:page.editPage')}}
             v-alert.mb-5(v-if='!isPublished', color='red', outlined, icon='mdi-minus-circle', dense)
               .caption {{$t('common:page.unpublishedWarning')}}
+            ai-summary.mb-4(:path='path', :locale='locale')
             .contents(ref='container')
               slot(name='contents')
             v-card.page-tour-card.mb-5(v-if='path.startsWith("สถานที่/")')
@@ -559,7 +560,8 @@ Prism.plugins.toolbar.registerButton('copy-to-clipboard', (env) => {
 export default {
   components: {
     NavSidebar,
-    StatusIndicator
+    StatusIndicator,
+    AiSummary: () => import('../../../components/common/ai-summary.vue')
   },
   props: {
     pageId: {

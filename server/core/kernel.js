@@ -42,6 +42,16 @@ module.exports = {
       }
       WIKI.extensions = require('./extensions')
       WIKI.asar = require('./asar')
+      WIKI.bigquery = require('./bigquery')
+
+      // Initialize BigQuery if configured
+      if (WIKI.config.bigquery?.enabled !== false) {
+        try {
+          await WIKI.bigquery.init()
+        } catch (err) {
+          WIKI.logger.warn('BigQuery initialization failed, AI summaries will be disabled:', err.message)
+        }
+      }
     } catch (err) {
       WIKI.logger.error(err)
       process.exit(1)

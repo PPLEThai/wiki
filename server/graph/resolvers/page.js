@@ -213,6 +213,22 @@ module.exports = {
       return _.orderBy(_.uniqBy(allTags, 'id'), ['tag'], ['asc'])
     },
     /**
+     * GET AI SUMMARY
+     */
+    async aiSummary (obj, args, context, info) {
+      try {
+        if (!WIKI.bigquery || !WIKI.bigquery.bigQuery) {
+          return null
+        }
+
+        const summary = await WIKI.bigquery.getAISummary(args.path, args.locale)
+        return summary
+      } catch (err) {
+        WIKI.logger.warn(`Failed to fetch AI summary for ${args.path}:`, err.message)
+        return null
+      }
+    },
+    /**
      * SEARCH TAGS
      */
     async searchTags (obj, args, context, info) {
