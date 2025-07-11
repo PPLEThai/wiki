@@ -9,6 +9,12 @@ db:
   db: $(DB_NAME)
   storage: $(DB_FILEPATH)
   ssl: $(DB_SSL)
+bigquery:
+  enabled: '$(BIGQUERY_ENABLED)'
+  projectId: '$(BIGQUERY_PROJECT_ID)'
+  datasetId: '$(BIGQUERY_DATASET_ID)'
+  tableId: '$(BIGQUERY_TABLE_ID)'
+  keyFilename: '$(BIGQUERY_KEY_FILENAME)'
 ssl:
   enabled: $(SSL_ACTIVE)
   port: 3443
