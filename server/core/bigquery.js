@@ -47,32 +47,6 @@ module.exports = {
     }
 
     try {
-      const query = `
-        SELECT pageId, path, summary, locale, createdAt
-        FROM \`${this.bigQuery.projectId}.${this.dataset.id}.${this.table.id}\`
-        WHERE path = @path AND locale = @locale
-        ORDER BY createdAt DESC
-        LIMIT 1
-      `
-
-      const options = {
-        query,
-        params: {
-          path: path,
-          locale: locale
-        }
-      }
-
-      const [rows] = await this.bigQuery.query(options)
-
-      if (rows && rows.length > 0) {
-        return {
-          summary: rows[0].summary,
-          createdAt: rows[0].createdAt,
-          locale: rows[0].locale
-        }
-      }
-
       const queryWithExternalData = `
         SELECT path, summary, locale, createdAt
         FROM \`${this.bigQuery.projectId}.${this.dataset.id}.${this.table.id}_with_external_data\`
@@ -96,6 +70,33 @@ module.exports = {
           summary: rowsWithExternalData[0].summary,
           createdAt: rowsWithExternalData[0].createdAt,
           locale: rowsWithExternalData[0].locale
+        }
+      }
+
+      // Fallback to local table
+      const query = `
+        SELECT pageId, path, summary, locale, createdAt
+        FROM \`${this.bigQuery.projectId}.${this.dataset.id}.${this.table.id}\`
+        WHERE path = @path AND locale = @locale
+        ORDER BY createdAt DESC
+        LIMIT 1
+      `
+
+      const options = {
+        query,
+        params: {
+          path: path,
+          locale: locale
+        }
+      }
+
+      const [rows] = await this.bigQuery.query(options)
+
+      if (rows && rows.length > 0) {
+        return {
+          summary: rows[0].summary,
+          createdAt: rows[0].createdAt,
+          locale: rows[0].locale
         }
       }
 
