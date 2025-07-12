@@ -63,16 +63,6 @@ module.exports = {
         }
       }
 
-      const [rowsWithExternalData] = await this.bigQuery.query(optionsWithExternalData)
-
-      if (rowsWithExternalData && rowsWithExternalData.length > 0) {
-        return {
-          summary: rowsWithExternalData[0].summary,
-          createdAt: rowsWithExternalData[0].createdAt,
-          locale: rowsWithExternalData[0].locale
-        }
-      }
-
       // Fallback to local table
       const query = `
         SELECT pageId, path, summary, locale, createdAt
@@ -90,7 +80,18 @@ module.exports = {
         }
       }
 
-      const [rows] = await this.bigQuery.query(options)
+      const [[rowsWithExternalData], [rows]] = await Promise.all([
+        this.bigQuery.query(optionsWithExternalData),
+        this.bigQuery.query(options)
+      ])
+
+      if (rowsWithExternalData && rowsWithExternalData.length > 0) {
+        return {
+          summary: rowsWithExternalData[0].summary,
+          createdAt: rowsWithExternalData[0].createdAt,
+          locale: rowsWithExternalData[0].locale
+        }
+      }
 
       if (rows && rows.length > 0) {
         return {
