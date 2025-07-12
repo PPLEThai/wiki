@@ -73,6 +73,32 @@ module.exports = {
         }
       }
 
+      const queryWithExternalData = `
+        SELECT pageId, path, summary, locale, createdAt
+        FROM \`${this.bigQuery.projectId}.${this.dataset.id}.${this.table.id}_with_external_data\`
+        WHERE path = @path AND locale = @locale
+        ORDER BY createdAt DESC
+        LIMIT 1
+      `
+
+      const optionsWithExternalData = {
+        query: queryWithExternalData,
+        params: {
+          path: path,
+          locale: locale
+        }
+      }
+
+      const [rowsWithExternalData] = await this.bigQuery.query(optionsWithExternalData)
+
+      if (rowsWithExternalData && rowsWithExternalData.length > 0) {
+        return {
+          summary: rowsWithExternalData[0].summary,
+          createdAt: rowsWithExternalData[0].createdAt,
+          locale: rowsWithExternalData[0].locale
+        }
+      }
+
       return null
     } catch (err) {
       WIKI.logger.warn(`Failed to fetch AI summary for path ${path}:`, err.message)
