@@ -74,7 +74,7 @@ module.exports = {
       }
 
       const queryWithExternalData = `
-        SELECT pageId, path, summary, locale, createdAt
+        SELECT path, summary, locale, createdAt
         FROM \`${this.bigQuery.projectId}.${this.dataset.id}.${this.table.id}_with_external_data\`
         WHERE path = @path AND locale = @locale
         ORDER BY createdAt DESC
