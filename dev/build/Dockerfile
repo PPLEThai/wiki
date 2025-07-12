@@ -7,17 +7,27 @@ RUN apk add yarn g++ make cmake python3 --no-cache
 
 WORKDIR /wiki
 
+# Copy package files first to leverage Docker layer caching
+COPY ./package.json ./package.json
+# Copy yarn.lock if it exists (this will be ignored if file doesn't exist)
+COPY ./yarn.loc[k] ./
+
+# Install dependencies first - this layer will be cached unless package.json changes
+RUN yarn cache clean
+RUN yarn --frozen-lockfile --non-interactive
+
+# Copy source files after dependencies are installed
 COPY ./client ./client
 COPY ./dev ./dev
 COPY ./patches ./patches
-COPY ./package.json ./package.json
 COPY ./.babelrc ./.babelrc
 COPY ./.eslintignore ./.eslintignore
 COPY ./.eslintrc.yml ./.eslintrc.yml
 
-RUN yarn cache clean
-RUN yarn --frozen-lockfile --non-interactive
+# Build the application
 RUN yarn build
+
+# Clean up and install production dependencies
 RUN rm -rf /wiki/node_modules
 RUN yarn --production --frozen-lockfile --non-interactive
 RUN yarn patch-package
